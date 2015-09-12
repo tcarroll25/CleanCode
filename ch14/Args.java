@@ -10,9 +10,10 @@ public class Args {
     private Set<Character> unexpectedArguments = new TreeSet<Character>();
     private Map<Character, ArgumentMarshaler> booleanArgs =
         new HashMap<Character, ArgumentMarshaler>();
-    private Map<Character, ArgumentMarshaler> stringArgs = 
+    private Map<Character, ArgumentMarshaler> stringArgs =
         new HashMap<Character, ArgumentMarshaler>();
-    private Map<Character, Integer> intArgs = new HashMap<Character, Integer>();
+    private Map<Character, ArgumentMarshaler> intArgs =
+        new HashMap<Character, ArgumentMarshaler>();
     private Set<Character> argsFound = new HashSet<Character>();
     private int currentArgument;
     private char errorArgumentId = '\0';
@@ -78,7 +79,7 @@ public class Args {
     }
         
     private void parseIntegerSchemaElement(char elementId) {
-        intArgs.put(elementId, 0);
+        intArgs.put(elementId, new IntegerArgumentMarshaler());
     }
         
     private void parseStringSchemaElement(char elementId) {
@@ -145,7 +146,7 @@ public class Args {
         String parameter = null;
         try {
             parameter = args[currentArgument];
-            intArgs.put(argChar, new Integer(parameter));
+            intArgs.get(argChar).setInteger(Integer.parseInt(parameter));
         } catch (ArrayIndexOutOfBoundsException e) {
             valid = false;
             errorArgumentId = argChar;
@@ -241,11 +242,12 @@ public class Args {
     }
         
     public int getInt(char arg) {
-        return zeroIfNull(intArgs.get(arg));
+        ArgumentMarshaler am = intArgs.get(arg);
+        return am == null ? 0 : am.getInteger();
     }
             
     public boolean getBoolean(char arg) {
-        Arg.ArgumentMarshaler am = booleanArgs.get(arg);
+        ArgumentMarshaler am = booleanArgs.get(arg);
         return am != null && am.getBoolean();
     }
         
@@ -263,6 +265,7 @@ public class Args {
     private class ArgumentMarshaler {
         private boolean booleanValue = false;
         private String stringValue;
+        private int integerValue;
 
         public void setBoolean(boolean value) {
             booleanValue = value;
@@ -278,6 +281,14 @@ public class Args {
 
         public String getString() {
             return stringValue == null ? "" : stringValue;
+        }
+
+        public void setInteger(int i) {
+            integerValue = i;
+        }
+        
+        public void getInteger() {
+            return integerValue;
         }
     }
 
