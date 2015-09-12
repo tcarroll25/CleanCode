@@ -53,7 +53,7 @@ public class Args {
         if (isBooleanSchemaElement(elementTail))
             marshalers.put(elementId, new BooleanArgumentMarshaler());
         else if (isStringSchemaElement(elementTail))
-            marshalers.put(elementId, StringArgumentMarshaler());
+            marshalers.put(elementId, new StringArgumentMarshaler());
         else if (isIntegerSchemaElement(elementTail)) {
             marshalers.put(elementId, new IntegerArgumentMarshaler());
         } else {
@@ -137,13 +137,9 @@ public class Args {
             parameter = args[currentArgument];
             m.set(parameter);
         } catch (ArrayIndexOutOfBoundsException e) {
-            valid = false;
-            errorArgumentId = argChar;
             errorCode = ErrorCode.MISSING_INTEGER;
             throw new ArgsException();
         } catch (ArgsException e) {
-            valid = false;
-            errorArgumentId = argChar;
             errorParameter = parameter;
             errorCode = ErrorCode.INVALID_INTEGER;
             throw e;
@@ -155,8 +151,6 @@ public class Args {
         try {
             m.set(args[currentArgument]);
         } catch (ArrayIndexOutOfBoundsException e) {
-            valid = false;
-            errorArgumentId = argChar;
             errorCode = ErrorCode.MISSING_STRING;
             throw new ArgsException();
         }
@@ -205,19 +199,17 @@ public class Args {
             message.append(c);
         }
         message.append(" unexpected.");
+
         return message.toString();
     }
-        
-    private boolean falseIfNull(Boolean b) {
-        return b != null && b;
-    }
-        
-    private int zeroIfNull(Integer i) {
-        return i == null ? 0 : i;
-    }
-        
-    private String blankIfNull(String s) {
-        return s == null ? "" : s;
+            
+    public boolean getBoolean(char arg) {
+        ArgumentMarshaler am = marshalers.get(arg);
+        try {
+            return am != null && (Boolean) am.get();
+        } catch (ClassCastException e) {
+            return false;
+        }
     }
         
     public String getString(char arg) {
@@ -235,15 +227,6 @@ public class Args {
             return am == null ? 0 : (Integer) am.get();
         } catch (ClassCastException e) {
             return 0;
-        }
-    }
-            
-    public boolean getBoolean(char arg) {
-        ArgumentMarshaler am = marshalers.get(arg);
-        try {
-            return am != null && (Boolean) am.get();
-        } catch (ClassCastException e) {
-            return false;
         }
     }
         
@@ -276,7 +259,7 @@ public class Args {
     }
 
     private class StringArgumentMarshaler extends ArgumentMarshaler {
-        private String stringValue;
+        private String stringValue = "";
         
         public void set(String s) {
             stringValue = s;
